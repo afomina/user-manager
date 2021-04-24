@@ -5,7 +5,6 @@ import com.datastax.oss.driver.api.core.cql.Row;
 import com.datastax.oss.driver.api.core.uuid.Uuids;
 import com.datastax.oss.protocol.internal.util.Bytes;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -77,16 +76,6 @@ public class UserDao {
                 Optional.ofNullable(user.getAvatar()).map(ByteBuffer::wrap).orElse(null),
                 user.getRole().getCode(),
                 uuid, user.getEmail());
-    }
-
-    /**
-     * Checks if user with {@code userId} exists in the database
-     *
-     * @param userId user id
-     * @return true if user exists in the database
-     */
-    public boolean exists(UUID userId) {
-        return findById(userId).isPresent();
     }
 
     /**
@@ -179,16 +168,22 @@ public class UserDao {
      * @param userId user id
      */
     public boolean delete(UUID userId) {
-        Optional<User> user = findById(userId);
-        if (user.isEmpty()) {
+        Optional<String> email = findEmail(userId);
+        if (email.isEmpty()) {
             return false;
         }
         cqlSession.execute("begin batch " +
                 "delete from user where id=?; " +
                 "delete from user_email where id=? and email=?; " +
                 "apply batch;",
-                userId, userId, user.get().getEmail());
+                userId, userId, email.get());
         return true;
+    }
+
+    private Optional<String> findEmail(UUID userId) {
+        return Optional.ofNullable(
+                cqlSession.execute("select email from user where id=?", userId)
+                        .map(row -> row.getString("email")).one());
     }
 
 }
