@@ -41,8 +41,15 @@ public class UserDao {
      * @return users
      */
     public List<User> getUsers() {
-        return cqlSession.execute("select * from user")
-                .map(ROW_MAPPER).all();
+        return cqlSession.execute("select id, email, password, first_name, last_name, role from user")
+                .map(row -> User.builder()
+                        .withId(row.getUuid("id"))
+                        .withEmail(row.getString("email"))
+                        .withPassword(Password.ofHash(row.getString("password")))
+                        .withFirstName(row.getString("first_name"))
+                        .withLastName(row.getString("last_name"))
+                        .withRole(Role.findByCode(row.getInt("role")).orElse(null))
+                        .build()).all();
     }
 
     /**
@@ -173,9 +180,9 @@ public class UserDao {
             return false;
         }
         cqlSession.execute("begin batch " +
-                "delete from user where id=?; " +
-                "delete from user_email where id=? and email=?; " +
-                "apply batch;",
+                        "delete from user where id=?; " +
+                        "delete from user_email where id=? and email=?; " +
+                        "apply batch;",
                 userId, userId, email.get());
         return true;
     }

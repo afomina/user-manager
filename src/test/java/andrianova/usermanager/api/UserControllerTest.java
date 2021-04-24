@@ -119,7 +119,7 @@ public class UserControllerTest {
                 .findFirst();
         assertThat(userOpt.isPresent(), is(true));
 
-        User user = userOpt.get();
+        User user = userDao.findById(userOpt.get().getId()).get();
         assertThat(user.getPassword().asString(),
                 is("130a9c46788a5ce84f1378bbde637c449c430b0c40312d6eb9fb2736c4acdc22"));
         assertThat(user.getRole(), is(Role.USER));
