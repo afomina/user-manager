@@ -74,7 +74,8 @@ public class UserDao {
                         "apply batch;",
                 uuid, user.getEmail(), user.getPassword().asString(),
                 user.getFirstName(), user.getLastName(),
-                ByteBuffer.wrap(user.getAvatar()), user.getRole().getCode(),
+                Optional.ofNullable(user.getAvatar()).map(ByteBuffer::wrap).orElse(null),
+                user.getRole().getCode(),
                 uuid, user.getEmail());
     }
 

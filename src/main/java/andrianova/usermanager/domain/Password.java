@@ -39,7 +39,7 @@ public class Password {
         return new Password(hash);
     }
 
-    @GraphQLQuery(name = "password")
+    @GraphQLQuery(name = "hash")
     public String asString() {
         return hash;
     }

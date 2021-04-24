@@ -12,8 +12,10 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import javax.validation.Valid;
 import java.util.Base64;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -46,7 +48,7 @@ public class UserController {
     public Map<String, Object> getById(@PathVariable("id") String id) {
         ExecutionResult result = graphQl.execute(
                 "{ user (id: \"" + id + "\") {" +
-                        " email, password { password }, firstName, lastName, avatar, role }}");
+                        " email, password { hash }, firstName, lastName, avatar, role }}");
         return result.toSpecification();
     }
 
@@ -56,9 +58,8 @@ public class UserController {
      * @param request user create request
      * @return HttpStatus.BAD_REQUEST if user already exists or request is not valid
      */
-    @PostMapping(produces = MediaType.APPLICATION_JSON_VALUE,
-            consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity create(@RequestBody UserRequest request) {
+    @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity create(@RequestBody @Valid UserRequest request) {
         if (userService.create(toUser(request))) {
             return ResponseEntity.ok().build();
         }
@@ -75,7 +76,7 @@ public class UserController {
      */
     @PutMapping(value = "/{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity update(@PathVariable("id") UUID id,
-                                 @RequestBody UserRequest request) {
+                                 @RequestBody @Valid UserRequest request) {
         if (userService.updateUser(id, toUser(request))) {
             return ResponseEntity.ok().build();
         }
@@ -107,7 +108,8 @@ public class UserController {
                 .withEmail(request.getEmail())
                 .withFirstName(request.getFirstName())
                 .withLastName(request.getLastName())
-                .withAvatar(Base64.getDecoder().decode(request.getAvatar()))
+                .withAvatar(Optional.ofNullable(request.getAvatar())
+                        .map(Base64.getDecoder()::decode).orElse(null))
                 .withPassword(Password.of(Base64.getDecoder().decode(request.getPassword())))
                 .withRole(Role.findByName(request.getRole()))
                 .build();
