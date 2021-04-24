@@ -9,6 +9,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -24,8 +25,7 @@ public class UserDao {
     private static final Function<Row, User> ROW_MAPPER = row -> User.builder()
             .withId(row.getUuid("id"))
             .withEmail(row.getString("email"))
-            .withPassword(Optional.ofNullable(row.getString("password"))
-                    .map(Password::of).orElse(null))
+            .withPassword(Password.ofHash(row.getString("password")))
             .withFirstName(row.getString("first_name"))
             .withLastName(row.getString("last_name"))
             .withAvatar(Optional.ofNullable(row.getByteBuffer("avatar"))
@@ -74,7 +74,7 @@ public class UserDao {
                         "apply batch;",
                 uuid, user.getEmail(), user.getPassword().asString(),
                 user.getFirstName(), user.getLastName(),
-                user.getAvatar(), user.getRole().getCode(),
+                ByteBuffer.wrap(user.getAvatar()), user.getRole().getCode(),
                 uuid, user.getEmail());
     }
 

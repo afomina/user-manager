@@ -31,7 +31,7 @@ public enum Role {
         return Arrays.stream(values())
                 .filter(role -> name.equals(role.getName()))
                 .findFirst()
-                .orElseThrow();
+                .orElseThrow(IllegalArgumentException::new);
     }
 
     public static Optional<Role> findByCode(int code) {

@@ -7,6 +7,9 @@ import io.leangen.graphql.GraphQLSchemaGenerator;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+/**
+ * GraphQl configuration
+ */
 @Configuration
 public class GraphQlConfig {
 

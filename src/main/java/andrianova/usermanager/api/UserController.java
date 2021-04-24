@@ -12,6 +12,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Base64;
 import java.util.Map;
 import java.util.UUID;
 
@@ -57,15 +58,8 @@ public class UserController {
      */
     @PostMapping(produces = MediaType.APPLICATION_JSON_VALUE,
             consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity create(@RequestBody UserCreateRequest request) {
-        if (userService.create(User.builder()
-                .withEmail(request.getEmail())
-                .withFirstName(request.getFirstName())
-                .withLastName(request.getLastName())
-                .withAvatar(request.getAvatar())
-                .withPassword(Password.of(request.getPassword()))
-                .withRole(Role.findByName(request.getRole()))
-                .build())) {
+    public ResponseEntity create(@RequestBody UserRequest request) {
+        if (userService.create(toUser(request))) {
             return ResponseEntity.ok().build();
         }
 
@@ -81,15 +75,8 @@ public class UserController {
      */
     @PutMapping(value = "/{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity update(@PathVariable("id") UUID id,
-                                 @RequestBody UserCreateRequest request) {
-        if (userService.updateUser(id, User.builder()
-                .withEmail(request.getEmail())
-                .withFirstName(request.getFirstName())
-                .withLastName(request.getLastName())
-                .withAvatar(request.getAvatar())
-                .withPassword(Password.of(request.getPassword()))
-                .withRole(Role.findByName(request.getRole()))
-                .build())) {
+                                 @RequestBody UserRequest request) {
+        if (userService.updateUser(id, toUser(request))) {
             return ResponseEntity.ok().build();
         }
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
@@ -107,5 +94,22 @@ public class UserController {
             return ResponseEntity.ok().build();
         }
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    private void handleException() {
+
+    }
+
+    private User toUser(UserRequest request) {
+        return User.builder()
+                .withEmail(request.getEmail())
+                .withFirstName(request.getFirstName())
+                .withLastName(request.getLastName())
+                .withAvatar(Base64.getDecoder().decode(request.getAvatar()))
+                .withPassword(Password.of(Base64.getDecoder().decode(request.getPassword())))
+                .withRole(Role.findByName(request.getRole()))
+                .build();
     }
 }

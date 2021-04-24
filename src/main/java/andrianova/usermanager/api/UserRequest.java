@@ -4,18 +4,24 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.springframework.lang.NonNull;
 
+import javax.validation.constraints.Email;
+
+import static java.util.Objects.requireNonNull;
+
 /**
- * Request to create a new user
+ * Request to create or update user
  */
-public class UserCreateRequest {
+public class UserRequest {
     /**
      * Email
      */
     @NonNull
+    @Email
     private final String email;
     /**
      * Password
      */
+    @NonNull
     private final String password;
     /**
      * First name
@@ -28,25 +34,26 @@ public class UserCreateRequest {
     /**
      * Avatar
      */
-    private final byte[] avatar;
+    private final String avatar;
     /**
      * Role
      */
+    @NonNull
     private final String role;
 
     @JsonCreator
-    public UserCreateRequest(@JsonProperty("email") @NonNull String email,
-                             @JsonProperty("password") @NonNull String password,
-                             @JsonProperty("firstName") String firstName,
-                             @JsonProperty("lastName") String lastName,
-                             @JsonProperty("avatar") byte[] avatar,
-                             @JsonProperty("role") String role) {
-        this.email = email;
-        this.password = password;
+    public UserRequest(@JsonProperty("email") @NonNull String email,
+                       @JsonProperty("password") @NonNull String password,
+                       @JsonProperty("firstName") String firstName,
+                       @JsonProperty("lastName") String lastName,
+                       @JsonProperty("avatar") String avatar,
+                       @JsonProperty("role") @NonNull String role) {
+        this.email = requireNonNull(email);
+        this.password = requireNonNull(password);
         this.firstName = firstName;
         this.lastName = lastName;
         this.avatar = avatar;
-        this.role = role;
+        this.role = requireNonNull(role);
     }
 
     @NonNull
@@ -71,7 +78,7 @@ public class UserCreateRequest {
     }
 
     @JsonProperty("avatar")
-    public byte[] getAvatar() {
+    public String getAvatar() {
         return avatar;
     }
 
