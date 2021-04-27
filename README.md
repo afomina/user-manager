@@ -48,7 +48,7 @@ QUIT;
 
     Request body:
   
-    `{"email": "string", "password": "string", 
+    `{"email": "string", "password": "Base64 encoded string", 
     "firstName": "string", "lastName": "string",
     "role": "user|admin", "avatar": "Base64 encoded string"}`
 
@@ -57,7 +57,7 @@ QUIT;
 
   Request body:
 
-  `{"email": "string", "password": "string",
+  `{"email": "string", "password": "Base64 encoded string",
   "firstName": "string", "lastName": "string",
   "role": "user|admin", "avatar": "Base64 encoded string"}`
 
