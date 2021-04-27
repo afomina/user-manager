@@ -13,6 +13,7 @@ public class Password {
     /**
      * Password SHA-256 hash
      */
+    @GraphQLQuery(name = "hash")
     private final String hash;
 
     private Password(@NonNull String hash) {
@@ -39,7 +40,10 @@ public class Password {
         return new Password(hash);
     }
 
-    @GraphQLQuery(name = "hash")
+    public String getHash() {
+        return hash;
+    }
+
     public String asString() {
         return hash;
     }

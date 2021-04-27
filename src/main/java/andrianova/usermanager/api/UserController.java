@@ -23,6 +23,7 @@ import java.util.UUID;
  */
 @RestController
 @RequestMapping("/user")
+@CrossOrigin(origins = "http://localhost:4200")
 public class UserController {
 
     @Autowired
@@ -60,11 +61,21 @@ public class UserController {
      */
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity create(@RequestBody @Valid UserRequest request) {
-        if (userService.create(toUser(request))) {
+        ExecutionResult result = graphQl.execute("mutation { createUser(user:  {" +
+                "email: " + wrapInQuotes(request.getEmail()) + ", " +
+                "password: " + wrapInQuotes(request.getPassword()) + ", " +
+                "role: " + wrapInQuotes(request.getRole()) + ", " +
+                "firstName: " + wrapInQuotes(request.getFirstName()) + ", " +
+                "lastName: " + wrapInQuotes(request.getLastName()) + ", " +
+                "avatar: " + wrapInQuotes(request.getAvatar()) +
+                "}) }");
+        if (!result.getErrors().isEmpty()) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+        if ((Boolean) ((Map)result.getData()).get("createUser")) {
             return ResponseEntity.ok().build();
         }
-
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+        return ResponseEntity.badRequest().build();
     }
 
     /**
@@ -77,10 +88,27 @@ public class UserController {
     @PutMapping(value = "/{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity update(@PathVariable("id") UUID id,
                                  @RequestBody @Valid UserRequest request) {
-        if (userService.updateUser(id, toUser(request))) {
+        ExecutionResult result = graphQl.execute("mutation { updateUser(" +
+                "id: " + wrapInQuotes(id.toString()) + ", " +
+                "user:  {" +
+                "email: " + wrapInQuotes(request.getEmail()) + ", " +
+                "password: " + wrapInQuotes(request.getPassword()) + ", " +
+                "role: " + wrapInQuotes(request.getRole()) + ", " +
+                "firstName: " + wrapInQuotes(request.getFirstName()) + ", " +
+                "lastName: " + wrapInQuotes(request.getLastName()) + ", " +
+                "avatar: " + wrapInQuotes(request.getAvatar()) +
+                "}) }");
+        if (!result.getErrors().isEmpty()) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+        if ((Boolean) ((Map)result.getData()).get("updateUser")) {
             return ResponseEntity.ok().build();
         }
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+        return ResponseEntity.badRequest().build();
+    }
+
+    private String wrapInQuotes(String value) {
+        return value == null ? value : "\"" + value + "\"";
     }
 
     /**
@@ -91,27 +119,20 @@ public class UserController {
      */
     @DeleteMapping("/{id}")
     public ResponseEntity delete(@PathVariable("id") UUID id) {
-        if (userService.deleteUser(id)) {
+        ExecutionResult result = graphQl.execute("mutation { deleteUser(" +
+                "id: \"" + id.toString() + "\")} ");
+        if (!result.getErrors().isEmpty()) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+        if ((Boolean) ((Map)result.getData()).get("deleteUser")) {
             return ResponseEntity.ok().build();
         }
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+        return ResponseEntity.badRequest().build();
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     private void handleException() {
-
     }
 
-    private User toUser(UserRequest request) {
-        return User.builder()
-                .withEmail(request.getEmail())
-                .withFirstName(request.getFirstName())
-                .withLastName(request.getLastName())
-                .withAvatar(Optional.ofNullable(request.getAvatar())
-                        .map(Base64.getDecoder()::decode).orElse(null))
-                .withPassword(Password.of(Base64.getDecoder().decode(request.getPassword())))
-                .withRole(Role.findByName(request.getRole()))
-                .build();
-    }
 }

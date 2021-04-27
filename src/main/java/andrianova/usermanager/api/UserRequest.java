@@ -2,6 +2,7 @@ package andrianova.usermanager.api;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.leangen.graphql.annotations.GraphQLQuery;
 import org.springframework.lang.NonNull;
 
 import javax.validation.constraints.Email;
@@ -17,28 +18,34 @@ public class UserRequest {
      */
     @NonNull
     @Email
+    @GraphQLQuery(name = "email")
     private final String email;
     /**
      * Password
      */
     @NonNull
+    @GraphQLQuery(name = "password")
     private final String password;
     /**
      * First name
      */
+    @GraphQLQuery(name = "firstName")
     private final String firstName;
     /**
      * Last name
      */
+    @GraphQLQuery(name = "lastName")
     private final String lastName;
     /**
      * Avatar
      */
+    @GraphQLQuery(name = "avatar")
     private final String avatar;
     /**
      * Role
      */
     @NonNull
+    @GraphQLQuery(name = "role")
     private final String role;
 
     @JsonCreator

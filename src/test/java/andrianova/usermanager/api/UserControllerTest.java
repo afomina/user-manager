@@ -5,6 +5,7 @@ import andrianova.usermanager.domain.Password;
 import andrianova.usermanager.domain.Role;
 import andrianova.usermanager.domain.User;
 import andrianova.usermanager.domain.UserDao;
+import com.datastax.oss.driver.shaded.guava.common.hash.Hashing;
 import org.junit.jupiter.api.BeforeEach;
 
 import org.junit.jupiter.api.Test;
@@ -103,7 +104,7 @@ public class UserControllerTest {
     public void should_createUser() throws Exception {
         mockMvc.perform(post("/user")
                 .content("{\"email\": \"email@email.com\", " +
-                        "\"password\": \"password\", " +
+                        "\"password\": \"" + Base64.getEncoder().encodeToString("password".getBytes(StandardCharsets.UTF_8)) + "\", " +
                         "\"role\": \"user\", " +
                         "\"firstName\": \"firstName\", " +
                         "\"lastName\": \"lastName\", " +
@@ -121,7 +122,7 @@ public class UserControllerTest {
 
         User user = userDao.findById(userOpt.get().getId()).get();
         assertThat(user.getPassword().asString(),
-                is("130a9c46788a5ce84f1378bbde637c449c430b0c40312d6eb9fb2736c4acdc22"));
+                is(Hashing.sha256().hashString("password", StandardCharsets.UTF_8).toString()));
         assertThat(user.getRole(), is(Role.USER));
         assertThat(user.getId(), notNullValue());
         assertThat(user.getLastName(), is("lastName"));
@@ -206,7 +207,7 @@ public class UserControllerTest {
                 .content("{\"lastName\": \"Smith\", " +
                         "\"firstName\": \"John\", " +
                         "\"email\": \"smith@test.com\", " +
-                        "\"password\": \"123456\", " +
+                        "\"password\": \"" + Base64.getEncoder().encodeToString("123456".getBytes(StandardCharsets.UTF_8)) + "\", " +
                         "\"role\": \"user\"}")
                 .contentType(MediaType.APPLICATION_JSON))
                 .andDo(print())
@@ -219,7 +220,7 @@ public class UserControllerTest {
         assertThat(user.get().getRole(), is(Role.USER));
         assertThat(user.get().getEmail(), is("smith@test.com"));
         assertThat(user.get().getPassword().asString(),
-                is("b44dc1962e4a8c2fac9706e4737311ecd7bd4c9800ad701a489e219611a325b9"));
+                is(Hashing.sha256().hashString("123456", StandardCharsets.UTF_8).toString()));
     }
 
     @Test

@@ -1,12 +1,17 @@
 package andrianova.usermanager.service;
 
+import andrianova.usermanager.api.UserRequest;
+import andrianova.usermanager.domain.Password;
+import andrianova.usermanager.domain.Role;
 import andrianova.usermanager.domain.User;
 import andrianova.usermanager.domain.UserDao;
 import io.leangen.graphql.annotations.GraphQLArgument;
+import io.leangen.graphql.annotations.GraphQLMutation;
 import io.leangen.graphql.annotations.GraphQLQuery;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.Base64;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -47,12 +52,13 @@ public class UserService {
      * @param user user to create
      * @return true if user created
      */
-    public boolean create(User user) {
+    @GraphQLMutation(name = "createUser")
+    public boolean create(@GraphQLArgument(name = "user") UserRequest user) {
         if (userDao.exists(user.getEmail())) {
             return false;
         }
 
-        userDao.create(user);
+        userDao.create(toUser(user));
         return true;
     }
 
@@ -63,8 +69,22 @@ public class UserService {
      * @param user updated user info
      * @return true if user was updated
      */
-    public boolean updateUser(UUID userId, User user) {
-        return userDao.update(userId, user);
+    @GraphQLMutation(name = "updateUser")
+    public boolean updateUser(@GraphQLArgument(name = "id") UUID userId,
+                              @GraphQLArgument(name = "user") UserRequest user) {
+        return userDao.update(userId, toUser(user));
+    }
+
+    private User toUser(UserRequest request) {
+        return User.builder()
+                .withEmail(request.getEmail())
+                .withFirstName(request.getFirstName())
+                .withLastName(request.getLastName())
+                .withAvatar(Optional.ofNullable(request.getAvatar())
+                        .map(Base64.getDecoder()::decode).orElse(null))
+                .withPassword(Password.of(Base64.getDecoder().decode(request.getPassword())))
+                .withRole(Role.findByName(request.getRole()))
+                .build();
     }
 
     /**
@@ -73,7 +93,8 @@ public class UserService {
      * @param userId user id
      * @return true if user was deleted
      */
-    public boolean deleteUser(UUID userId) {
+    @GraphQLMutation(name = "deleteUser")
+    public boolean deleteUser(@GraphQLArgument(name = "id") UUID userId) {
         return userDao.delete(userId);
     }
 }
