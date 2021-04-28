@@ -67,14 +67,16 @@ public class UserController {
                 "firstName: " + wrapInQuotes(request.getFirstName()) + ", " +
                 "lastName: " + wrapInQuotes(request.getLastName()) + ", " +
                 "avatar: " + wrapInQuotes(request.getAvatar()) +
-                "}) }");
+                "}) " +
+                "{id, email, firstName, lastName, role } } ");
         if (!result.getErrors().isEmpty()) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
-        if ((Boolean) ((Map)result.getData()).get("createUser")) {
-            return ResponseEntity.ok().build();
+        Object user = ((Map) result.getData()).get("createUser");
+        if (user == null) {
+            return ResponseEntity.badRequest().build();
         }
-        return ResponseEntity.badRequest().build();
+        return ResponseEntity.ok(user);
     }
 
     /**

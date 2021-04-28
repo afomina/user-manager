@@ -1,6 +1,7 @@
 package andrianova.usermanager.domain;
 
 import com.datastax.oss.driver.api.core.CqlSession;
+import com.datastax.oss.driver.api.core.cql.ResultSet;
 import com.datastax.oss.driver.api.core.cql.Row;
 import com.datastax.oss.driver.api.core.uuid.Uuids;
 import com.datastax.oss.protocol.internal.util.Bytes;
@@ -69,9 +70,9 @@ public class UserDao {
      *
      * @param user user to store
      */
-    public void create(User user) {
+    public Optional<UUID> create(User user) {
         UUID uuid = Uuids.timeBased();
-        cqlSession.execute("begin batch " +
+        ResultSet resultSet = cqlSession.execute("begin batch " +
                         "insert into user (" +
                         COLUMNS +
                         ") values (?, ?, ?, ?, ?, ?, ?); " +
@@ -83,6 +84,10 @@ public class UserDao {
                 Optional.ofNullable(user.getAvatar()).map(ByteBuffer::wrap).orElse(null),
                 user.getRole().getCode(),
                 uuid, user.getEmail());
+        if (resultSet.wasApplied()) {
+            return Optional.of(uuid);
+        }
+        return Optional.empty();
     }
 
     /**

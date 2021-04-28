@@ -53,13 +53,13 @@ public class UserService {
      * @return true if user created
      */
     @GraphQLMutation(name = "createUser")
-    public boolean create(@GraphQLArgument(name = "user") UserRequest user) {
+    public Optional<User> create(@GraphQLArgument(name = "user") UserRequest user) {
         if (userDao.exists(user.getEmail())) {
-            return false;
+            return Optional.empty();
         }
 
-        userDao.create(toUser(user));
-        return true;
+        Optional<UUID> userId = userDao.create(toUser(user));
+        return userId.flatMap(this::getUser);
     }
 
     /**
