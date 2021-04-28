@@ -161,7 +161,7 @@ public class UserDao {
             values.put("last_name", user.getLastName());
         }
         if (!Arrays.equals(user.getAvatar(), oldUser.getAvatar())) {
-            values.put("avatar", user.getAvatar());
+            values.put("avatar", Optional.ofNullable(user.getAvatar()).map(ByteBuffer::wrap).orElse(null));
         }
         if (!Objects.equals(user.getRole(), oldUser.getRole())) {
             values.put("role", user.getRole().getCode());

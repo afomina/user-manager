@@ -59,6 +59,7 @@ public class UserController {
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity create(@RequestBody @Valid UserRequest request) {
         log.debug("Create user: {}", request);
+
         ExecutionResult result = graphQl.execute("mutation { createUser(user:  {" +
                 "email: " + wrapInQuotes(request.getEmail()) + ", " +
                 "password: " + wrapInQuotes(request.getPassword()) + ", " +
@@ -86,6 +87,8 @@ public class UserController {
     @PutMapping(value = "/{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity update(@PathVariable("id") UUID id,
                                  @RequestBody @Valid UserRequest request) {
+        log.debug("Update user: {}", request);
+
         ExecutionResult result = graphQl.execute("mutation { updateUser(" +
                 "id: " + wrapInQuotes(id.toString()) + ", " +
                 "user:  {" +
