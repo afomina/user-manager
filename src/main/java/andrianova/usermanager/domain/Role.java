@@ -1,5 +1,7 @@
 package andrianova.usermanager.domain;
 
+import io.leangen.graphql.annotations.GraphQLEnumValue;
+
 import java.util.Arrays;
 import java.util.Optional;
 
@@ -7,8 +9,10 @@ import java.util.Optional;
  * User roles
  */
 public enum Role {
+    @GraphQLEnumValue(name = "user")
     USER(1, "user"),
 
+    @GraphQLEnumValue(name = "admin")
     ADMIN(2, "admin");
 
     private final int code;

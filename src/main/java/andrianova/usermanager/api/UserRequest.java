@@ -93,4 +93,16 @@ public class UserRequest {
     public String getRole() {
         return role;
     }
+
+    @Override
+    public String toString() {
+        return "UserRequest{" +
+                "email='" + email + '\'' +
+                ", password='" + password + '\'' +
+                ", firstName='" + firstName + '\'' +
+                ", lastName='" + lastName + '\'' +
+                ", avatar='" + avatar + '\'' +
+                ", role='" + role + '\'' +
+                '}';
+    }
 }

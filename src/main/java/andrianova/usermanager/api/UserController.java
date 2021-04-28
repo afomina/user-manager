@@ -1,11 +1,10 @@
 package andrianova.usermanager.api;
 
-import andrianova.usermanager.domain.Password;
-import andrianova.usermanager.domain.Role;
 import andrianova.usermanager.domain.User;
-import andrianova.usermanager.service.UserService;
 import graphql.ExecutionResult;
 import graphql.GraphQL;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -13,9 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
-import java.util.Base64;
 import java.util.Map;
-import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -26,8 +23,8 @@ import java.util.UUID;
 @CrossOrigin(origins = "http://localhost:4200")
 public class UserController {
 
-    @Autowired
-    private UserService userService;
+    private final Logger log = LoggerFactory.getLogger(UserController.class);
+
     @Autowired
     private GraphQL graphQl;
 
@@ -49,7 +46,7 @@ public class UserController {
     public Map<String, Object> getById(@PathVariable("id") String id) {
         ExecutionResult result = graphQl.execute(
                 "{ user (id: \"" + id + "\") {" +
-                        " email, password { hash }, firstName, lastName, avatar, role }}");
+                        " id, email, password { hash }, firstName, lastName, avatar, role }}");
         return result.toSpecification();
     }
 
@@ -61,6 +58,7 @@ public class UserController {
      */
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity create(@RequestBody @Valid UserRequest request) {
+        log.debug("Create user: {}", request);
         ExecutionResult result = graphQl.execute("mutation { createUser(user:  {" +
                 "email: " + wrapInQuotes(request.getEmail()) + ", " +
                 "password: " + wrapInQuotes(request.getPassword()) + ", " +
@@ -108,7 +106,7 @@ public class UserController {
     }
 
     private String wrapInQuotes(String value) {
-        return value == null ? value : "\"" + value + "\"";
+        return value == null ? null : "\"" + value + "\"";
     }
 
     /**
