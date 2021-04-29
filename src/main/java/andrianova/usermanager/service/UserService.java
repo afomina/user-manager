@@ -54,7 +54,7 @@ public class UserService {
      */
     @GraphQLMutation(name = "createUser")
     public Optional<User> create(@GraphQLArgument(name = "user") UserRequest user) {
-        if (userDao.exists(user.getEmail())) {
+        if (userDao.findByEmail(user.getEmail()).isPresent()) {
             return Optional.empty();
         }
 

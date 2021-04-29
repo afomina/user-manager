@@ -44,10 +44,6 @@ public class Password {
         return hash;
     }
 
-    public String asString() {
-        return hash;
-    }
-
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

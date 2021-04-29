@@ -79,7 +79,7 @@ public class UserDao {
                         "insert into user_email (id, email) " +
                         "values (?, ?); " +
                         "apply batch;",
-                uuid, user.getEmail(), user.getPassword().asString(),
+                uuid, user.getEmail(), user.getPassword().getHash(),
                 user.getFirstName(), user.getLastName(),
                 Optional.ofNullable(user.getAvatar()).map(ByteBuffer::wrap).orElse(null),
                 user.getRole().getCode(),
@@ -91,16 +91,15 @@ public class UserDao {
     }
 
     /**
-     * Checks if user with {@code email} exists in the database
+     * Finds user id by {@code email}
      *
      * @param email user email
-     * @return true if user exists in the database
+     * @return user id, if present
      */
-    public boolean exists(String email) {
+    public Optional<UUID> findByEmail(String email) {
         return Optional.ofNullable(
-                cqlSession.execute("select * from user_email where email=?", email)
-                        .one())
-                .isPresent();
+                cqlSession.execute("select id from user_email where email=?", email)
+                        .one()).map(row -> row.getUuid("id"));
     }
 
     /**
@@ -139,7 +138,7 @@ public class UserDao {
     }
 
     private boolean updateEmail(UUID userId, String oldEmail, String newEmail) {
-        if (exists(newEmail)) {
+        if (findByEmail(newEmail).isPresent()) {
             return false;
         }
         cqlSession.execute("begin batch " +
@@ -157,7 +156,7 @@ public class UserDao {
             values.put("email", user.getEmail());
         }
         if (!Objects.equals(user.getPassword(), oldUser.getPassword())) {
-            values.put("password", user.getPassword().asString());
+            values.put("password", user.getPassword().getHash());
         }
         if (!Objects.equals(user.getFirstName(), oldUser.getFirstName())) {
             values.put("first_name", user.getFirstName());

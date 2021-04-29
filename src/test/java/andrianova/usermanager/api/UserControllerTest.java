@@ -121,7 +121,7 @@ public class UserControllerTest {
         assertThat(userOpt.isPresent(), is(true));
 
         User user = userDao.findById(userOpt.get().getId()).get();
-        assertThat(user.getPassword().asString(),
+        assertThat(user.getPassword().getHash(),
                 is(Hashing.sha256().hashString("password", StandardCharsets.UTF_8).toString()));
         assertThat(user.getRole(), is(Role.USER));
         assertThat(user.getId(), notNullValue());
@@ -219,7 +219,7 @@ public class UserControllerTest {
         assertThat(user.get().getLastName(), is("Smith"));
         assertThat(user.get().getRole(), is(Role.USER));
         assertThat(user.get().getEmail(), is("smith@test.com"));
-        assertThat(user.get().getPassword().asString(),
+        assertThat(user.get().getPassword().getHash(),
                 is(Hashing.sha256().hashString("123456", StandardCharsets.UTF_8).toString()));
     }
 
