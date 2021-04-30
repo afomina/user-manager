@@ -37,16 +37,16 @@ public class AuthController {
      * @return response with Authorization header set or Unauthorized error
      */
     @PostMapping("login")
-    public ResponseEntity login(@RequestBody @Valid LoginRequest request) {
+    public ResponseEntity<LoginResponse> login(@RequestBody @Valid LoginRequest request) {
         try {
             Authentication authenticate = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword()));
 
             UserDetails user = (UserDetails) authenticate.getPrincipal();
 
-            return ResponseEntity.ok().header(HttpHeaders.AUTHORIZATION,
-                    JWT.create().withSubject(user.getUsername())
-                            .sign(Algorithm.HMAC512(securityProperties.getSigningKey()))).build();
+            String token = JWT.create().withSubject(user.getUsername())
+                    .sign(Algorithm.HMAC512(securityProperties.getSigningKey()));
+            return ResponseEntity.ok(new LoginResponse(token));
         } catch (BadCredentialsException ex) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
