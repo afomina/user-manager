@@ -1,5 +1,6 @@
 package andrianova.usermanager.config;
 
+import andrianova.usermanager.auth.AuthService;
 import andrianova.usermanager.auth.JwtAuthFilter;
 import andrianova.usermanager.auth.UserDetailsServiceImpl;
 import andrianova.usermanager.domain.Password;
@@ -30,7 +31,7 @@ import java.nio.charset.StandardCharsets;
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
     @Autowired
-    private SecurityProperties securityProperties;
+    private AuthService authService;
 
     @Override
     protected void configure(HttpSecurity http) throws Exception {
@@ -43,7 +44,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .logout()
                 .permitAll()
                 .and()
-                .addFilterBefore(new JwtAuthFilter(securityProperties, userDetailsService()),
+                .addFilterBefore(new JwtAuthFilter(authService),
                         UsernamePasswordAuthenticationFilter.class)
                 .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);
     }

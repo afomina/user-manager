@@ -1,13 +1,9 @@
 package andrianova.usermanager.auth;
 
-import andrianova.usermanager.config.SecurityProperties;
-import com.auth0.jwt.JWT;
-import com.auth0.jwt.algorithms.Algorithm;
 import org.springframework.http.HttpHeaders;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -16,7 +12,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.Collections;
+import java.util.Optional;
 
 import static org.apache.commons.lang.StringUtils.isEmpty;
 
@@ -25,13 +21,10 @@ import static org.apache.commons.lang.StringUtils.isEmpty;
  */
 public class JwtAuthFilter extends OncePerRequestFilter {
 
-    private final SecurityProperties securityProperties;
-    private final UserDetailsService userDetailsService;
+    private final AuthService authService;
 
-    public JwtAuthFilter(SecurityProperties securityProperties,
-                         UserDetailsService userDetailsService) {
-        this.securityProperties = securityProperties;
-        this.userDetailsService = userDetailsService;
+    public JwtAuthFilter(AuthService authService) {
+        this.authService = authService;
     }
 
     @Override
@@ -44,19 +37,14 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             return;
         }
 
-        String username = JWT.require(Algorithm.HMAC512(securityProperties.getSigningKey()))
-                .build()
-                .verify(header)
-                .getSubject();
-        if (username == null) {
+        Optional<UserDetails> userDetails = authService.findUser(header);
+        if (userDetails.isEmpty()) {
             filterChain.doFilter(request, response);
             return;
         }
-
-        UserDetails userDetails = userDetailsService.loadUserByUsername(username);
         UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-                userDetails, null,
-                userDetails == null ? Collections.emptyList() : userDetails.getAuthorities());
+                userDetails.get(), null,
+                userDetails.get().getAuthorities());
 
         authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 

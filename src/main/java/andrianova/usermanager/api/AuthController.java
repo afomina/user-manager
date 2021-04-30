@@ -1,8 +1,6 @@
 package andrianova.usermanager.api;
 
-import andrianova.usermanager.config.SecurityProperties;
-import com.auth0.jwt.JWT;
-import com.auth0.jwt.algorithms.Algorithm;
+import andrianova.usermanager.auth.AuthService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -26,7 +24,7 @@ import java.util.stream.Collectors;
 public class AuthController {
 
     @Autowired
-    private SecurityProperties securityProperties;
+    private AuthService authService;
 
     @Autowired
     private AuthenticationManager authenticationManager;
@@ -45,10 +43,8 @@ public class AuthController {
 
             UserDetails user = (UserDetails) authenticate.getPrincipal();
 
-            String token = JWT.create().withSubject(user.getUsername())
-                    .sign(Algorithm.HMAC512(securityProperties.getSigningKey()));
-
-            return ResponseEntity.ok(new LoginResponse(token, user.getAuthorities().stream()
+            return ResponseEntity.ok(new LoginResponse(authService.createAuthToken(user),
+                    user.getAuthorities().stream()
                     .map(GrantedAuthority::getAuthority).collect(Collectors.toList())));
         } catch (BadCredentialsException ex) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();

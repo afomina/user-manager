@@ -1,19 +1,21 @@
 package andrianova.usermanager.api;
 
 import andrianova.usermanager.Application;
+import andrianova.usermanager.auth.AuthService;
+import andrianova.usermanager.auth.UserDetailsImpl;
 import andrianova.usermanager.domain.Password;
 import andrianova.usermanager.domain.Role;
 import andrianova.usermanager.domain.User;
 import andrianova.usermanager.domain.UserDao;
 import com.datastax.oss.driver.shaded.guava.common.hash.Hashing;
 import org.junit.jupiter.api.BeforeEach;
-
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
@@ -47,11 +49,21 @@ public class UserControllerTest {
     private MockMvc mockMvc;
     @Autowired
     private UserDao userDao;
+    @Autowired
+    private AuthService authService;
+    private String authToken;
 
     @BeforeEach
     public void clear() {
         userDao.getUsers().stream().map(User::getId)
                 .forEach(userDao::delete);
+        User admin = User.builder()
+                .withRole(Role.ADMIN)
+                .withEmail("admin@test.com")
+                .withPassword(Password.of("admin".getBytes(StandardCharsets.UTF_8)))
+                .build();
+        userDao.create(admin);
+        authToken = authService.createAuthToken(new UserDetailsImpl(admin));
     }
 
     @Test
@@ -64,15 +76,14 @@ public class UserControllerTest {
                 .withRole(Role.USER)
                 .build());
 
-        mockMvc.perform(get("/user"))
+        mockMvc.perform(get("/user")
+                .header(HttpHeaders.AUTHORIZATION, authToken))
                 .andDo(print())
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.users", hasSize(1)))
+                .andExpect(jsonPath("$.data.users", hasSize(2)))
                 .andExpect(jsonPath("$.data.users[0].id", notNullValue()))
-                .andExpect(jsonPath("$.data.users[0].lastName", is("lastName")))
-                .andExpect(jsonPath("$.data.users[0].firstName", is("firstName")))
-                .andExpect(jsonPath("$.data.users[0].email", is("email@test.com")))
-                .andExpect(jsonPath("$.data.users[0].role", is("user")));
+                .andExpect(jsonPath("$.data.users[0].email", notNullValue()))
+                .andExpect(jsonPath("$.data.users[0].role", notNullValue()));
     }
 
     @Test
@@ -85,10 +96,13 @@ public class UserControllerTest {
                 .withRole(Role.USER)
                 .withAvatar(getAvatar())
                 .build());
-        Optional<User> user = userDao.getUsers().stream().findFirst();
+        Optional<User> user = userDao.getUsers().stream()
+                .filter(user1 -> user1.getEmail().equals("email@test.com"))
+                .findFirst();
         assertThat(user.isPresent(), is(true));
 
-        mockMvc.perform(get("/user/" + user.get().getId()))
+        mockMvc.perform(get("/user/" + user.get().getId())
+                .header(HttpHeaders.AUTHORIZATION, authToken))
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.user.lastName", is("lastName")))
@@ -103,6 +117,7 @@ public class UserControllerTest {
     @Test
     public void should_createUser() throws Exception {
         mockMvc.perform(post("/user")
+                .header(HttpHeaders.AUTHORIZATION, authToken)
                 .content("{\"email\": \"email@email.com\", " +
                         "\"password\": \"" + Base64.getEncoder().encodeToString("password".getBytes(StandardCharsets.UTF_8)) + "\", " +
                         "\"role\": \"user\", " +
@@ -133,6 +148,7 @@ public class UserControllerTest {
     @Test
     public void should_validateEmail_when_createUser() throws Exception {
         mockMvc.perform(post("/user")
+                .header(HttpHeaders.AUTHORIZATION, authToken)
                 .content("{\"email\": \"email\", " +
                         "\"password\": \"password\", " +
                         "\"role\": \"user\", " +
@@ -147,6 +163,7 @@ public class UserControllerTest {
     @Test
     public void should_validateRole_when_createUser() throws Exception {
         mockMvc.perform(post("/user")
+                .header(HttpHeaders.AUTHORIZATION, authToken)
                 .content("{\"email\": \"email@mail.com\", " +
                         "\"password\": \"password\", " +
                         "\"role\": \"fakeRole\", " +
@@ -159,6 +176,7 @@ public class UserControllerTest {
     @Test
     public void should_validateEmptyEmail_when_createUser() throws Exception {
         mockMvc.perform(post("/user")
+                .header(HttpHeaders.AUTHORIZATION, authToken)
                 .content("{\"password\": \"password\", " +
                         "\"role\": \"user\", " +
                         "}")
@@ -179,6 +197,7 @@ public class UserControllerTest {
                 .build());
 
         mockMvc.perform(post("/user")
+                .header(HttpHeaders.AUTHORIZATION, authToken)
                 .content("{\"email\": \"email@test.com\", " +
                         "\"password\": \"password\", " +
                         "\"role\": \"user\", " +
@@ -204,6 +223,7 @@ public class UserControllerTest {
         assertThat(user.isPresent(), is(true));
 
         mockMvc.perform(put("/user/" + user.get().getId().toString())
+                .header(HttpHeaders.AUTHORIZATION, authToken)
                 .content("{\"lastName\": \"Smith\", " +
                         "\"firstName\": \"John\", " +
                         "\"email\": \"smith@test.com\", " +
@@ -239,6 +259,7 @@ public class UserControllerTest {
         assertThat(user.isPresent(), is(true));
 
         mockMvc.perform(put("/user/" + user.get().getId().toString())
+                .header(HttpHeaders.AUTHORIZATION, authToken)
                 .content("{\"lastName\": \"Smith\", " +
                         "\"firstName\": \"John\", " +
                         "\"email\": \"smith\", " +
@@ -269,6 +290,7 @@ public class UserControllerTest {
                 .build());
 
         mockMvc.perform(put("/user/" + user.get().getId().toString())
+                .header(HttpHeaders.AUTHORIZATION, authToken)
                 .content("{\"lastName\": \"Smith\", " +
                         "\"firstName\": \"John\", " +
                         "\"email\": \"smith@test.com\", " +
@@ -282,6 +304,7 @@ public class UserControllerTest {
     @Test
     public void should_validateUserNotExists_when_updateUser() throws Exception {
         mockMvc.perform(put("/user/1234")
+                .header(HttpHeaders.AUTHORIZATION, authToken)
                 .content("{\"lastName\": \"Smith\", " +
                         "\"firstName\": \"John\", " +
                         "\"email\": \"smith@test.com\", " +
@@ -295,6 +318,7 @@ public class UserControllerTest {
     @Test
     public void should_validateUserNotExists_when_deleteUser() throws Exception {
         mockMvc.perform(delete("/user/1234")
+                .header(HttpHeaders.AUTHORIZATION, authToken)
                 .contentType(MediaType.APPLICATION_JSON))
                 .andDo(print())
                 .andExpect(status().isBadRequest());
@@ -314,6 +338,7 @@ public class UserControllerTest {
         assertThat(user.isPresent(), is(true));
 
         mockMvc.perform(delete("/user/" + user.get().getId())
+                .header(HttpHeaders.AUTHORIZATION, authToken)
                 .contentType(MediaType.APPLICATION_JSON))
                 .andDo(print())
                 .andExpect(status().isOk());

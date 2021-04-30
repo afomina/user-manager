@@ -31,12 +31,24 @@ email varchar,
 primary key (email, id)
 );
 
+begin batch 
+insert into user (id, email, password, role) 
+values (38752b70-a9c0-11eb-aab7-8903a043eed4, 'admin@test.com', '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92', 2); 
+insert into user_email (id, email) values (38752b70-a9c0-11eb-aab7-8903a043eed4, 'admin@test.com'); 
+apply batch;
+
 QUIT;
 ```
 * Run app on localhost:8080
 `gradlew bootRun`
 
 ## API
+#### Authorization
+* `POST /login`
+* Request `{email: "admin@test.com", password: "123456"}`
+* Response `{token: "string"}`
+* Use `token` from response in `Authorization` header for next requests
+  
 #### List all users 
 * `GET /user`
 
